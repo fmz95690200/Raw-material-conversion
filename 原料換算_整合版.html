@@ -1,0 +1,1507 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>原料換算</title>
+<style>
+  :root{
+    --ink:#1f2a24;
+    --paper:#f6f4ee;
+    --line:#c9c2b2;
+    --accent:#3f6b4a;
+    --accent-dark:#2c4d34;
+    --danger:#8a3b2b;
+    --danger-dark:#6e2e21;
+    --cell:#ffffff;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+    background:var(--paper);
+    color:var(--ink);
+    padding:20px 12px 60px;
+  }
+  .wrap{max-width:640px;margin:0 auto;}
+
+  .title-cn{font-size:1.5rem;font-weight:700;letter-spacing:0.06em;margin:0;}
+
+  .top-bar{
+    display:flex;align-items:flex-start;justify-content:space-between;gap:10px;
+    flex-wrap:wrap;margin-bottom:10px;
+  }
+
+  /* ---------- 自訂下拉選單（切換項目） ---------- */
+  .project-select-wrap{margin-bottom:10px;}
+  .project-select-wrap > label{
+    display:block;font-size:0.8rem;color:#5b5346;margin-bottom:4px;
+  }
+  .custom-select{position:relative;}
+  .cs-trigger{
+    width:100%;display:flex;flex-direction:column;align-items:flex-start;gap:2px;
+    padding:8px 30px 8px 10px;border:1px solid var(--line);border-radius:5px;
+    background:#fffef9;cursor:pointer;position:relative;text-align:left;
+    font-family:inherit;
+  }
+  .cs-trigger-label{font-size:0.85rem;font-weight:600;color:var(--accent-dark);line-height:1.3;}
+  .cs-trigger-cn{font-size:0.72rem;color:#7a7263;line-height:1.2;}
+  .cs-arrow{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:0.75rem;color:#7a7263;}
+  .cs-list{
+    position:absolute;top:calc(100% + 4px);left:0;right:0;background:#fff;
+    border:1px solid var(--line);border-radius:5px;max-height:280px;overflow-y:auto;
+    z-index:20;box-shadow:0 4px 10px rgba(0,0,0,0.1);
+  }
+  .cs-option{padding:8px 10px;cursor:pointer;border-bottom:1px solid #f0ede2;}
+  .cs-option:last-child{border-bottom:none;}
+  .cs-option:hover,.cs-option.active{background:#f2f0e8;}
+  .cs-option-label{font-size:0.83rem;font-weight:600;color:var(--accent-dark);line-height:1.3;}
+  .cs-option-cn{font-size:0.7rem;color:#7a7263;margin-top:1px;line-height:1.2;}
+
+  .products-sub{
+    display:flex;flex-direction:column;gap:2px;font-size:0.82rem;color:#4a4438;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+    padding:8px 0;margin-bottom:18px;
+  }
+  .products-sub span::before{content:"● ";color:var(--accent);}
+
+  .toggle-wrap{display:inline-flex;align-items:center;gap:8px;flex-shrink:0;}
+  .toggle-label{
+    font-size:0.68rem;color:#5b5346;line-height:1.25;text-align:right;white-space:nowrap;
+  }
+  .ios-toggle{
+    position:relative;width:64px;height:32px;border-radius:18px;
+    border:2px solid var(--ink);background:#fff;padding:0;cursor:pointer;
+    flex-shrink:0;transition:background 0.2s,border-color 0.2s;
+  }
+  .ios-toggle .toggle-thumb{
+    position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;
+    background:var(--ink);transition:left 0.2s,background 0.2s;
+  }
+  .ios-toggle .toggle-text{
+    position:absolute;top:50%;transform:translateY(-50%);
+    font-size:0.68rem;font-weight:800;letter-spacing:0.02em;right:8px;color:var(--ink);
+  }
+  .ios-toggle.on{background:var(--ink);border-color:var(--ink);}
+  .ios-toggle.on .toggle-thumb{left:calc(100% - 26px);background:#fff;}
+  .ios-toggle.on .toggle-text{right:auto;left:8px;color:#fff;}
+
+  button{font-size:0.9rem;padding:9px 16px;border-radius:5px;border:none;cursor:pointer;font-weight:600;}
+  .btn-clear{background:var(--danger);color:#fff;}
+  .btn-clear:hover{background:var(--danger-dark);}
+  .result-clear-row{display:flex;align-items:center;gap:8px;margin-top:12px;}
+  .result-clear-row .btn-clear{margin-left:auto;}
+  .btn-derivation{background:var(--accent);color:#fff;}
+  .btn-derivation:hover{background:var(--accent-dark);}
+
+  .name-legend{
+    font-size:0.78rem;color:#4a4438;margin-bottom:8px;
+    display:flex;flex-wrap:wrap;gap:4px 14px;
+  }
+  .name-legend span b{color:var(--accent-dark);}
+
+  .derivation-panel{
+    margin-top:10px;padding:12px 12px 10px;border:1px dashed var(--line);
+    border-radius:6px;background:#fbfaf5;font-size:0.8rem;line-height:1.45;
+  }
+  .deriv-product{margin-bottom:14px;}
+  .deriv-product:last-child{margin-bottom:0;}
+  .deriv-product-title{
+    font-weight:700;color:var(--accent-dark);font-size:0.86rem;
+    margin-bottom:8px;border-bottom:1px solid var(--line);padding-bottom:4px;
+  }
+  .deriv-group{
+    margin-bottom:8px;padding-bottom:8px;border-bottom:1px dotted var(--line);
+  }
+  .deriv-group:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0;}
+  .deriv-group-title{font-weight:600;color:#5b5346;font-size:0.74rem;margin-bottom:3px;}
+  .deriv-line{color:#8a8272;font-size:0.76rem;margin-bottom:3px;}
+  .deriv-intro{
+    color:#5b5346;background:#f2f0e8;border-radius:4px;
+    padding:6px 8px;margin-bottom:8px;font-size:0.74rem;line-height:1.5;
+  }
+  .deriv-formula{
+    font-family:"Courier New",monospace;color:#2c2620;font-size:0.78rem;
+    margin-bottom:2px;word-break:break-all;
+  }
+  .deriv-sum{color:var(--accent-dark);}
+  .deriv-dynamic{color:var(--accent-dark);font-weight:600;margin-bottom:8px;}
+  .deriv-empty{color:#9a9385;font-style:italic;}
+
+  .product-card{
+    background:var(--cell);border:1px solid var(--line);border-radius:6px;
+    padding:16px 14px 18px;margin-bottom:16px;
+  }
+  .product-card h2{font-size:1rem;margin:0 0 4px;}
+
+  .formula{
+    display:flex;flex-direction:column;gap:6px;font-size:0.95rem;color:var(--ink);
+    background:#fbfaf5;border:1px dashed var(--line);border-radius:5px;
+    padding:10px 12px;margin:10px 0 14px;
+  }
+  .formula-note-line{
+    font-size:0.95rem;color:var(--ink);font-weight:600;line-height:1.4;
+  }
+  .formula-row{
+    display:flex;align-items:center;flex-wrap:nowrap;gap:6px;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap;
+  }
+  .formula-row > *{flex-shrink:0;}
+  .frac{display:inline-flex;flex-direction:column;align-items:center;vertical-align:middle;font-size:0.85rem;line-height:1.3;}
+  .frac .num{padding:0 6px 2px;}
+  .frac .den{border-top:1.4px solid var(--ink);padding:2px 6px 0;}
+  @media (max-width:400px){
+    .formula-note-line{font-size:0.85rem;}
+    .formula-row{font-size:0.82rem;gap:4px;}
+    .frac{font-size:0.74rem;}
+  }
+
+  .step{display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+  .step label{display:block;font-size:0.85rem;margin-bottom:4px;white-space:nowrap;}
+  .step input[type=number]{
+    width:90px;padding:7px 8px;border:1px solid var(--line);border-radius:4px;font-size:0.95rem;
+  }
+  .step button.btn-primary,
+  .step button.btn-clear-small{
+    font-size:0.85rem;padding:9px 10px;
+    flex:0 0 auto;width:4em;text-align:center;
+  }
+
+  .extra-fields-row{
+    display:flex;align-items:flex-end;gap:10px;flex-wrap:wrap;margin-bottom:14px;
+  }
+  .extra-fields-row label{display:block;font-size:0.85rem;margin-bottom:4px;white-space:nowrap;}
+  .extra-fields-row input[type=number]{
+    width:90px;padding:7px 8px;border:1px solid var(--line);border-radius:4px;font-size:0.95rem;
+  }
+
+  .groups{display:flex;flex-direction:column;gap:8px;margin-bottom:6px;}
+  .group-row{background:#fbfaf5;border:1px dashed var(--line);border-radius:5px;padding:8px 8px 4px;}
+  .group-row .g-label{font-size:0.75rem;font-weight:600;color:#6b6455;margin-bottom:4px;}
+  .group-row.is-last .g-label{color:var(--danger-dark);}
+
+  .g-grid{display:grid;gap:6px;}
+  .g-grid.cols-1{grid-template-columns:repeat(1,1fr);}
+  .g-grid.cols-2{grid-template-columns:repeat(2,1fr);}
+  .g-grid.cols-3{grid-template-columns:repeat(3,1fr);}
+
+  .g-cell label{
+    display:block;font-size:0.68rem;white-space:nowrap;color:#4a4438;
+    margin-bottom:2px;overflow:hidden;text-overflow:ellipsis;
+  }
+  .g-cell input[type=number]{
+    width:100%;min-width:0;padding:6px 4px;border:1px solid var(--line);border-radius:4px;
+    font-size:0.85rem;text-align:center;
+  }
+  .g-cell input[type=number]::placeholder{
+    color:#c4bfae;opacity:0.7;font-style:italic;
+  }
+  .g-cell.placeholder{display:flex;align-items:flex-end;justify-content:center;}
+  .g-cell.placeholder .ph-box{
+    width:100%;padding:6px 4px;border:1px dashed var(--line);border-radius:4px;
+    font-size:0.68rem;color:#a39d8c;text-align:center;background:#f2f0e8;
+  }
+
+  .error{color:var(--danger-dark);font-size:0.82rem;margin-top:4px;min-height:1em;}
+
+  .action-row{display:flex;justify-content:center;gap:8px;margin-top:12px;}
+  .action-row button{font-size:0.9rem;padding:9px 28px;}
+  .btn-calc-small{background:var(--ink);color:#fff;}
+  .btn-calc-small:hover{background:#000;}
+  .btn-clear-small{background:var(--danger);color:#fff;}
+  .btn-clear-small:hover{background:var(--danger-dark);}
+
+  .card{
+    background:var(--cell);border:1px solid var(--line);border-radius:6px;
+    padding:16px 14px 18px;margin-top:16px;
+  }
+  .card h2{font-size:1rem;margin:0 0 10px;color:var(--ink);}
+  .hidden{display:none;}
+
+  table{width:100%;border-collapse:collapse;font-size:0.8rem;}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;margin:0 -2px;border-radius:4px;}
+  .table-scroll table{width:auto;min-width:100%;}
+  .table-scroll td.product-name{white-space:nowrap;}
+  th,td{border:1px solid var(--line);padding:6px 4px;text-align:center;}
+  th{background:#eee8d8;color:var(--accent-dark);}
+  td.product-name{text-align:left;font-weight:600;font-size:0.75rem;}
+  tr.last-row{background:#fbf3ea;}
+  .usage-last{color:#c0392b;font-weight:700;}
+
+  .note{font-size:0.75rem;color:#7a7263;margin-top:10px;margin-bottom:14px;}
+  .disclaimer{
+    font-size:0.75rem;color:var(--danger-dark);margin-top:10px;
+    padding:8px 10px;border:1px solid #e0c9a6;border-radius:5px;background:#fdf6ec;
+    line-height:1.5;
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="top-bar">
+    <h1 class="title-cn">原料換算</h1>
+    <div class="toggle-wrap">
+      <span class="toggle-label">切換品名<br>自動清除參數</span>
+      <button type="button" class="ios-toggle" id="autoClearToggle" aria-pressed="false">
+        <span class="toggle-thumb"></span>
+        <span class="toggle-text">OFF</span>
+      </button>
+    </div>
+  </div>
+
+
+  <div class="project-select-wrap">
+    <label>製品名（選擇項目）</label>
+    <div class="custom-select" id="customSelect">
+      <button type="button" class="cs-trigger" id="csTrigger">
+        <span class="cs-trigger-label" id="csTriggerLabel"></span>
+        <span class="cs-trigger-cn" id="csTriggerCn"></span>
+        <span class="cs-arrow">▾</span>
+      </button>
+      <div class="cs-list hidden" id="csList"></div>
+    </div>
+  </div>
+
+  <div class="products-sub" id="productsSub"></div>
+
+  <div id="productsContainer"></div>
+
+  <div class="card hidden" id="resultCard">
+    <h2>計算結果</h2>
+    <div class="name-legend" id="nameLegend"></div>
+    <div class="table-scroll">
+      <table>
+        <thead>
+          <tr id="resultHeadRow"></tr>
+        </thead>
+        <tbody id="resultBody"></tbody>
+      </table>
+    </div>
+    <div class="result-clear-row">
+      <button type="button" class="btn-derivation hidden" id="derivationBtn">推導過程</button>
+      <button type="button" class="btn-clear" id="clearAllBtn">全部清除</button>
+    </div>
+    <div class="derivation-panel hidden" id="derivationPanel"></div>
+    <div class="note">紅字為系統自動回推（最後一組回推使用量，或依批量差額計算的品名）之結果。</div>
+    <div class="disclaimer">
+      ⚠ 本頁計算結果僅供輔助參考，不能取代人工複核。正式作業前，請依原始公式與數據自行人工複算並核對無誤後再使用；若程式結果與人工計算有落差，請以人工計算結果為準，並回報異常。
+    </div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   ★★★ 設定區（要新增/修改項目，只需要在這裡編輯 PROJECTS 陣列） ★★★
+   =====================================================================
+   每一個項目（PROJECTS 裡的一個物件）代表下拉選單中的一個選項，包含：
+     id       項目的唯一代碼（英數字，給程式內部用，不會顯示）
+     label    製品名（英文），顯示在下拉選單第一行
+     nameCn   （選填）製品名中文，顯示在下拉選單第二行
+     showDerivation （選填，預設 false）是否在「計算結果」表格下方顯示
+                     「推導過程」按鈕，按下後展開每個品名的分步驟計算過程
+                     （含每一步的文字說明），目前只有 HEPARIN SODIUM
+                     OINTMENT 開啟這個功能；其他項目若要開啟，直接加上
+                     showDerivation: true 即可，不用改引擎程式碼。
+     products 這個項目底下的品名陣列，可以只放 1 個，也可以放多個。
+
+   品名（products 裡的物件）有兩種類型：
+
+   【一般型】（預設，不用寫 type）
+     name                 品名
+     standardTotal        標準總量
+     standardUnit         標準總量單位，沒有填 ''
+     ratio                換算比例（單一數字，例如 4.19、0.95、1）
+     ratioNum / ratioDen  （選填）如果比例本身是兩個數字相除（例如
+                           384.27/438.31 這種分子量校正），改填這兩個，
+                           畫面上會顯示成分數，公式仍照 ratioNum/ratioDen 計算
+     hasContent           是否需要「含量」類欄位，預設 true。
+                           若該品名只靠水份%回推、沒有含量欄位，填 false。
+     hasWater             是否需要「水份%」欄位
+     contentLabel          （選填）含量欄位名稱，預設「含量%」，可改「力價」等
+     contentPlaceholder    （選填）含量欄位輸入框內的提示文字（灰色半透明），例如 "undried"
+     contentFormulaLabel   （選填）公式圖示中含量欄位的完整寫法，預設「含量(%)」
+     editableStandardTotal （選填）true 表示「標準總量」不是寫死的數字，而是由使用者
+                            自己輸入。輸入框會放在「確定」按鈕之後、第一組組別欄位
+                            之前，公式圖示也會把數字改顯示成「標準值」文字。這個欄位
+                            永遠可以編輯（按過確定、算過結果都不會鎖住），每次按
+                            「計算」都會重新讀取畫面上目前的數字，所以要臨時修改
+                            標準值再重算，不用按「清除」整個重填，改完數字直接按
+                            「計算」即可。
+     standardPlaceholder   （選填，搭配 editableStandardTotal 使用）標準值輸入框的
+                            提示文字數字，例如 6000 會顯示「例:6000」，預設 450。
+     editableRatio          （選填）true 表示公式裡的「比例」（ratio）也不是寫死的
+                            數字，而是由使用者自己輸入。輸入框跟「標準值」放在一起
+                            （確定按鈕之後、第一組組別欄位之前），公式圖示的分子也會
+                            改顯示成 ratioLabel 的文字，而不是數字。只適用一般型
+                            （非補差型），且只在 hasContent 為 true 時生效。跟
+                            editableStandardTotal 一樣永遠可編輯、每次按「計算」都會
+                            重新讀取目前數字。
+     ratioLabel             （選填，搭配 editableRatio 使用）這個比例欄位的名稱，
+                            會同時用在輸入框標籤和公式圖示上，例如「銅含量係數」，
+                            預設「係數」。
+     ratioPlaceholder       （選填，搭配 editableRatio 使用）比例輸入框的提示文字
+                            數字，例如 4.19 會顯示「例:4.19」，預設 1。
+     note                   （選填）放在公式框「同一個框內、公式文字之前」的補充說明，
+                            會自動換行、顏色跟公式文字一致，例如
+                            「Glycyrrhizic acid 含量以6.5%為準」這種備註。
+                            一般型、補差型都可以用，不限公式類型。
+
+     公式邏輯：
+       使用量 = 標準總量 × (hasContent? 比例/含量 : 比例)
+                        × (hasWater? 100/(100-水份%) : 1)
+
+   【補差型】（type: "complement"，例如錠劑裡的賦形劑，用總重量扣掉另一個品名）
+     name              品名
+     type              固定填 "complement"
+     complementTotal   批次總重量（例如 75900）。若搭配 editableStandardTotal:true，
+                        這裡可以不寫，改由使用者自己輸入（見下方）。
+     complementUnit    單位（例如 'g'）
+     referTo           要參照的另一個品名的 name（例如 "Sucralfate"）
+     complementMode    （選填）扣除方式，預設不寫＝扣「referTo品名的總使用量」。
+                        若填 "increase"，則改扣「referTo品名換算後的增加量」＝
+                        （referTo總使用量 − referTo標準值），用於像 Potato Starch
+                        這種扣的是換算後多用掉的部分、而不是全部使用量的情況。
+     editableStandardTotal／standardPlaceholder
+                        跟一般型用法一樣，true 時 complementTotal 改成使用者輸入的
+                        「標準值」欄位（畫面位置、提示文字邏輯都相同）。
+     公式邏輯：
+       這個品名一樣要自己輸入「分析號碼數量」，前面組別一樣手動填「使用量」，
+       只是它的「標準總量」不是固定數字，而是動態算出來的：
+         動態標準總量 = complementTotal − referTo品名「所有組別使用量的加總」
+         （complementMode:"increase" 時改成：
+          動態標準總量 = complementTotal − (referTo總使用量 − referTo標準值)）
+       算出動態標準總量後，走法跟一般型完全一樣：
+         前面組別使用量加總 → 最後一組 = 動態標準總量 − 前面組別使用量加總
+       （所以一定要先按過 referTo 品名的「計算」，這個品名才能按「計算」；
+       但「分析號碼數量」→「確定」這一步可以先做，不受限制）
+   ===================================================================== */
+const PROJECTS = [
+  {
+    id: "inon_green_granules",
+    label: "INON GREEN GRANULES",
+    nameCn: "胃緩克寧顆粒",
+    products: [
+      {
+        name: "Sodium Copper Chlorophyllin",
+        standardUnit: "",
+        hasWater: true,
+        editableStandardTotal: true,
+        standardPlaceholder: 2400,
+        editableRatio: true,
+        ratioLabel: "銅含量係數",
+        ratioPlaceholder: 4.19
+      },
+      {
+        name: "Scopolia Extract",
+        standardUnit: "g",
+        ratio: 0.95,
+        hasWater: false,
+        editableStandardTotal: true,
+        standardPlaceholder: 1800
+      }
+    ]
+  },
+  {
+    id: "nazal_spray_lavender",
+    label: "NAZAL SPRAY",
+    nameCn: "鼻通「噴液劑」薰衣草",
+    products: [
+      {
+        name: "Benzalkonium Chloride M2-100",
+        standardUnit: "g",
+        ratio: 100,
+        hasWater: true,
+        editableStandardTotal: true,
+        standardPlaceholder: 120
+      }
+    ]
+  },
+  {
+    id: "heparin_sodium_ointment",
+    label: "HEPARIN SODIUM OINTMENT",
+    nameCn: "腫脹寧軟膏",
+    showDerivation: true,
+    products: [
+      {
+        name: "Heparin Sodium",
+        standardTotal: 77000000,
+        standardUnit: "(IU)",
+        ratio: 0.001,
+        hasWater: false,
+        contentLabel: "力價",
+        contentFormulaLabel: "力價(IU/mg)"
+      }
+    ]
+  },
+  {
+    id: "narcorin_capsule",
+    label: "NARCORIN CAPSULE",
+    nameCn: "舒胃膠囊",
+    products: [
+      {
+        name: "Scopolamine Hydrobromide",
+        standardTotal: 10.5,
+        standardUnit: "",
+        ratioNum: 384.27,
+        ratioDen: 438.31,
+        hasContent: false,
+        hasWater: true
+      }
+    ]
+  },
+  {
+    id: "height_scral_3_layers_tablet",
+    label: "HEIGHT SCRAL 3 LAYERS TABLET",
+    nameCn: "懷舒樂三層錠",
+    products: [
+      {
+        name: "Sucralfate",
+        standardTotal: 45000,
+        standardUnit: "g",
+        ratio: 1,
+        hasContent: false,
+        hasWater: true
+      },
+      {
+        name: "Lactose",
+        type: "complement",
+        complementTotal: 75900,
+        complementUnit: "g",
+        referTo: "Sucralfate",
+        ratio: 1,
+        hasContent: false,
+        hasWater: false
+      }
+    ]
+  },
+  {
+    id: "linalon_hemorrhoidal_ointment",
+    label: "LINALON HEMORRHOIDAL OINTMENT",
+    nameCn: "利那痛痔軟膏",
+    products: [
+      {
+        name: "Aluminum Chlorhydroxyallantoinate",
+        standardUnit: "g",
+        ratio: 42.4,
+        hasWater: true,
+        editableStandardTotal: true,
+        standardPlaceholder: 450,
+        contentLabel: "含量%（undried）",
+        contentFormulaLabel: "含量(%)",
+        contentPlaceholder: "undried"
+      }
+    ]
+  },
+  {
+    id: "tonin_s_troche",
+    label: "TONIN S TROCHE",
+    nameCn: "特寧喉錠",
+    products: [
+      {
+        name: "Chlorhydroxyallantoinate",
+        standardUnit: "g",
+        ratio: 6.5,
+        hasWater: false,
+        editableStandardTotal: true,
+        standardPlaceholder: 6000,
+        contentFormulaLabel: "含量(%)",
+        note: "Glycyrrhizic acid 含量以6.5%為準"
+      }
+    ]
+  },
+  {
+    id: "tesmin_diarrhea_capsules",
+    label: "TESMIN DIARRHEA CAPSULES",
+    nameCn: "痢舒能膠囊",
+    products: [
+      {
+        name: "Berberine Chloride",
+        standardUnit: "g",
+        ratio: 100,
+        hasWater: true,
+        editableStandardTotal: true,
+        standardPlaceholder: 15000
+      },
+      {
+        name: "Potato Starch",
+        type: "complement",
+        complementMode: "increase",
+        complementUnit: "g",
+        referTo: "Berberine Chloride",
+        editableStandardTotal: true,
+        standardPlaceholder: 6150,
+        ratio: 1,
+        hasContent: false,
+        hasWater: false
+      }
+    ]
+  },
+  {
+    id: "tesmin_ace_capsules",
+    label: "TESMIN ACE CAPSULES",
+    nameCn: "胃適敏膠囊",
+    products: [
+      {
+        name: "Scopolia Extract",
+        standardUnit: "",
+        ratio: 0.95,
+        hasWater: false,
+        editableStandardTotal: true,
+        standardPlaceholder: 720
+      },
+      {
+        name: "Berberine Chloride",
+        standardUnit: "",
+        ratio: 100,
+        hasWater: true,
+        editableStandardTotal: true,
+        standardPlaceholder: 2400
+      }
+    ]
+  },
+  {
+    id: "inon_tablets",
+    label: "INON TABLETS",
+    nameCn: "胃能錠",
+    products: [
+      {
+        name: "Sodium Copper Chlorophyllin",
+        standardUnit: "g",
+        ratio: 3.88,
+        hasWater: true,
+        editableStandardTotal: true,
+        standardPlaceholder: 480,
+        note: "銅含量以3.88為基準"
+      },
+      {
+        name: "Scopolia Extract",
+        standardUnit: "g",
+        ratio: 0.95,
+        hasWater: false,
+        editableStandardTotal: true,
+        standardPlaceholder: 1440
+      }
+    ]
+  },
+  {
+    id: "airmit_tablets",
+    label: "AIRMIT TABLETS",
+    nameCn: "雅寧錠",
+    products: [
+      {
+        name: "Scopolamine Hydrobromide",
+        standardTotal: 11.25,
+        standardUnit: "",
+        ratioNum: 384.27,
+        ratioDen: 438.31,
+        hasContent: false,
+        hasWater: true
+      },
+      {
+        name: "Dimenhydrinate",
+        standardTotal: 3750,
+        standardUnit: "",
+        ratio: 45.7,
+        hasWater: false
+      }
+    ]
+  },
+  {
+    id: "hivitaminen_1_6_12_plus",
+    label: "HIVITAMINEN 1．6．12 PLUS",
+    nameCn: "維達寧膜衣錠",
+    products: [
+      {
+        name: "Cyanocobalamine",
+        standardTotal: 165,
+        standardUnit: "g",
+        ratio: 100,
+        hasWater: true,
+        editableStandardTotal: true,
+        standardPlaceholder: 165
+      },
+      {
+        name: "Vitamin E-S500d",
+        standardTotal: 16000,
+        standardUnit: "g",
+        ratio: 100,
+        hasWater: false,
+        editableStandardTotal: true,
+        standardPlaceholder: 16000
+      }
+    ]
+  }
+];
+/* ===================== 設定區結束，以下為引擎，通常不用改 ===================== */
+
+(function(){
+  const csTrigger = document.getElementById('csTrigger');
+  const csTriggerLabel = document.getElementById('csTriggerLabel');
+  const csTriggerCn = document.getElementById('csTriggerCn');
+  const csList = document.getElementById('csList');
+  const productsSub = document.getElementById('productsSub');
+  const productsContainer = document.getElementById('productsContainer');
+  const resultCard = document.getElementById('resultCard');
+  const resultHeadRow = document.getElementById('resultHeadRow');
+  const resultBody = document.getElementById('resultBody');
+  const nameLegend = document.getElementById('nameLegend');
+  const derivationBtn = document.getElementById('derivationBtn');
+  const derivationPanel = document.getElementById('derivationPanel');
+  const autoClearToggle = document.getElementById('autoClearToggle');
+  const clearAllBtn = document.getElementById('clearAllBtn');
+
+  let currentProjectId = PROJECTS[0].id;
+  let products = [];         // 目前畫面上的品名陣列
+  let resultsState = {};
+
+  // =========================================================
+  // 狀態保存（localStorage）：手機瀏覽器切換電腦版網站、或反過來切換時，
+  // 網頁常常會被瀏覽器整個重新載入，JS 記憶體裡的資料就會消失。
+  // 這裡把「目前選到的項目」＋「每個品名輸入的內容／計算結果」即時存到
+  // localStorage，重新載入頁面時會自動還原，下拉選單也不會跑回預設值。
+  // =========================================================
+  const STORAGE_KEY = 'rawMaterialCalc_state_v1';
+
+  function loadAll(){
+    try{
+      return JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {};
+    } catch(e){
+      return {};
+    }
+  }
+
+  function saveAll(all){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(all));
+    } catch(e){
+      // localStorage 無法使用時（例如被瀏覽器封鎖），安靜略過，不影響原本功能
+    }
+  }
+
+  function saveLastProjectId(){
+    const all = loadAll();
+    all.lastProjectId = currentProjectId;
+    saveAll(all);
+  }
+
+  // ---------- 切換品名時是否自動清除該頁面參數（右上角切換鈕，設定會記住） ----------
+  let autoClearOnSwitch = false;
+
+  function loadAutoClearSetting(){
+    const all = loadAll();
+    autoClearOnSwitch = !!all.autoClearOnSwitch;
+    updateAutoClearToggleUI();
+  }
+
+  function saveAutoClearSetting(){
+    const all = loadAll();
+    all.autoClearOnSwitch = autoClearOnSwitch;
+    saveAll(all);
+  }
+
+  function updateAutoClearToggleUI(){
+    autoClearToggle.classList.toggle('on', autoClearOnSwitch);
+    autoClearToggle.setAttribute('aria-pressed', autoClearOnSwitch ? 'true' : 'false');
+    autoClearToggle.innerHTML = `
+      <span class="toggle-thumb"></span>
+      <span class="toggle-text">${autoClearOnSwitch ? 'ON' : 'OFF'}</span>
+    `;
+  }
+
+  autoClearToggle.addEventListener('click', function(){
+    autoClearOnSwitch = !autoClearOnSwitch;
+    saveAutoClearSetting();
+    updateAutoClearToggleUI();
+  });
+
+  // 計算結果表格下方的「全部清除」：清掉目前這個製品名頁面裡，
+  // 所有品名（品名一、品名二…）的輸入欄位與計算結果，並把畫面捲回最上面。
+  clearAllBtn.addEventListener('click', function(){
+    products.forEach(p => {
+      const yInput = document.getElementById(`y-${p.key}`);
+      const confirmBtn = document.getElementById(`confirm-${p.key}`);
+      const stdInputEl = document.getElementById(`std-${p.key}`);
+      const ratioInputEl = document.getElementById(`ratio-${p.key}`);
+      const groupsEl = document.getElementById(`groups-${p.key}`);
+      const errEl = document.getElementById(`err-${p.key}`);
+      const extraRowEl = document.getElementById(`extra-${p.key}`);
+      const actionRowEl = document.getElementById(`action-${p.key}`);
+
+      p._Y = 0;
+      if(yInput){ yInput.value = ''; yInput.disabled = false; }
+      if(confirmBtn) confirmBtn.disabled = false;
+      if(stdInputEl){ stdInputEl.value = ''; stdInputEl.disabled = false; }
+      if(ratioInputEl){ ratioInputEl.value = ''; ratioInputEl.disabled = false; }
+      if(extraRowEl) extraRowEl.classList.add('hidden');
+      if(actionRowEl) actionRowEl.classList.add('hidden');
+      if(groupsEl) groupsEl.innerHTML = '';
+      if(errEl) errEl.textContent = '';
+      resultsState[p.key] = null;
+    });
+    derivationPanel.classList.add('hidden');
+    derivationPanel.innerHTML = '';
+    derivationBtn.textContent = '推導過程';
+    renderResults();
+    persistState();
+    window.scrollTo({top: 0, behavior: 'smooth'});
+  });
+
+  // 「推導過程」鍵：展開/收合說明區域；每次展開都重新產生內容，
+  // 確保顯示的是目前最新的計算結果。
+  derivationBtn.addEventListener('click', function(){
+    const isHidden = derivationPanel.classList.contains('hidden');
+    if(isHidden){
+      renderDerivationPanel();
+      derivationPanel.classList.remove('hidden');
+      derivationBtn.textContent = '推導過程 ▲';
+      derivationPanel.scrollIntoView({behavior:'smooth', block:'start'});
+    } else {
+      derivationPanel.classList.add('hidden');
+      derivationBtn.textContent = '推導過程';
+    }
+  });
+
+  // 把「目前畫面上」每個品名的輸入內容與計算結果存起來
+  function persistState(){
+    const projData = {};
+    products.forEach(p => {
+      const groupsEl = document.getElementById(`groups-${p.key}`);
+      const stdInputEl = document.getElementById(`std-${p.key}`);
+      const ratioInputEl = document.getElementById(`ratio-${p.key}`);
+      const fields = [];
+      const count = p._Y || 0;
+      if(groupsEl){
+        for(let i=0;i<count;i++){
+          const usageEl = groupsEl.querySelector(`.usage-input[data-i="${i}"]`);
+          const contentEl = groupsEl.querySelector(`.content-input[data-i="${i}"]`);
+          const waterEl = groupsEl.querySelector(`.water-input[data-i="${i}"]`);
+          fields.push({
+            usage: usageEl ? usageEl.value : '',
+            content: contentEl ? contentEl.value : '',
+            water: waterEl ? waterEl.value : ''
+          });
+        }
+      }
+      projData[p.key] = {
+        Y: count,
+        confirmed: count > 0,
+        standardInput: stdInputEl ? stdInputEl.value : '',
+        ratioInput: ratioInputEl ? ratioInputEl.value : '',
+        fields: fields,
+        results: resultsState[p.key] || null
+      };
+    });
+    const all = loadAll();
+    all.lastProjectId = currentProjectId;
+    all.projects = all.projects || {};
+    all.projects[currentProjectId] = projData;
+    saveAll(all);
+  }
+
+  function clearStoredProject(projectId){
+    const all = loadAll();
+    if(all.projects) delete all.projects[projectId];
+    saveAll(all);
+  }
+
+  // 依儲存的資料把畫面還原成上次離開時的樣子
+  function restoreState(project){
+    const all = loadAll();
+    const projData = all.projects && all.projects[project.id];
+    if(!projData) return;
+
+    products.forEach(p => {
+      const saved = projData[p.key];
+      if(!saved) return;
+      const yInput = document.getElementById(`y-${p.key}`);
+      const confirmBtn = document.getElementById(`confirm-${p.key}`);
+      const stdInputEl = document.getElementById(`std-${p.key}`);
+      const ratioInputEl = document.getElementById(`ratio-${p.key}`);
+      const groupsEl = document.getElementById(`groups-${p.key}`);
+      const extraRowEl = document.getElementById(`extra-${p.key}`);
+      const actionRowEl = document.getElementById(`action-${p.key}`);
+
+      if(stdInputEl && saved.standardInput){
+        stdInputEl.value = saved.standardInput;
+        if(p.editableStandardTotal){
+          const v = parseFloat(saved.standardInput);
+          if(!isNaN(v)){
+            if(p.type === 'complement'){
+              p.complementTotal = v;
+            } else {
+              p.standardTotal = v;
+            }
+          }
+        }
+      }
+
+      if(ratioInputEl && saved.ratioInput){
+        ratioInputEl.value = saved.ratioInput;
+        if(p.editableRatio){
+          const rv = parseFloat(saved.ratioInput);
+          if(!isNaN(rv)) p.ratio = rv;
+        }
+      }
+
+      if(saved.Y && saved.Y > 0){
+        yInput.value = saved.Y;
+        p._Y = saved.Y;
+        buildGroups(groupsEl, saved.Y, p);
+        saved.fields.forEach((f, i) => {
+          const usageEl = groupsEl.querySelector(`.usage-input[data-i="${i}"]`);
+          const contentEl = groupsEl.querySelector(`.content-input[data-i="${i}"]`);
+          const waterEl = groupsEl.querySelector(`.water-input[data-i="${i}"]`);
+          if(usageEl && f.usage !== '') usageEl.value = f.usage;
+          if(contentEl && f.content !== '') contentEl.value = f.content;
+          if(waterEl && f.water !== '') waterEl.value = f.water;
+        });
+        if(saved.confirmed){
+          yInput.disabled = true;
+          confirmBtn.disabled = true;
+          if(extraRowEl) extraRowEl.classList.remove('hidden');
+          if(actionRowEl) actionRowEl.classList.remove('hidden');
+        }
+      }
+
+      if(saved.results){
+        resultsState[p.key] = saved.results;
+      }
+    });
+
+    renderResults();
+  }
+
+  // 頁面即將關閉／重新整理前，做最後一次保存（保險機制）
+  window.addEventListener('beforeunload', persistState);
+
+  // ---------- 自訂下拉選單 ----------
+  function fmtNum(n){
+    if(n === null || n === undefined) return '';
+    return Number(n).toLocaleString('en-US', {maximumFractionDigits: 6});
+  }
+
+  function buildOptionList(){
+    csList.innerHTML = '';
+    const sortedProjects = [...PROJECTS].sort((a, b) => a.label.localeCompare(b.label));
+    sortedProjects.forEach(proj => {
+      const opt = document.createElement('div');
+      opt.className = 'cs-option' + (proj.id === currentProjectId ? ' active' : '');
+      opt.innerHTML = `
+        <div class="cs-option-label">${proj.label}</div>
+        ${proj.nameCn ? `<div class="cs-option-cn">${proj.nameCn}</div>` : ''}
+      `;
+      opt.addEventListener('click', function(){
+        // 切換前先處理「離開的那個」製品名頁面資料：
+        // 切換鈕開啟時清掉它，關閉時照常保存起來（只影響這個頁面，不影響其他製品名）
+        if(autoClearOnSwitch){
+          clearStoredProject(currentProjectId);
+        } else {
+          persistState();
+        }
+        currentProjectId = proj.id;
+        updateTriggerDisplay(proj);
+        closeList();
+        renderApp(proj);
+        saveLastProjectId();
+      });
+      csList.appendChild(opt);
+    });
+  }
+
+  function updateTriggerDisplay(proj){
+    csTriggerLabel.textContent = proj.label;
+    csTriggerCn.textContent = proj.nameCn || '';
+    csTriggerCn.style.display = proj.nameCn ? 'block' : 'none';
+  }
+
+  function openList(){ csList.classList.remove('hidden'); buildOptionList(); }
+  function closeList(){ csList.classList.add('hidden'); }
+
+  csTrigger.addEventListener('click', function(e){
+    e.stopPropagation();
+    if(csList.classList.contains('hidden')) openList(); else closeList();
+  });
+  document.addEventListener('click', function(){ closeList(); });
+
+  // ---------- 共用工具 ----------
+  function getVal(container, className, index){
+    const el = container.querySelector(`.${className}[data-i="${index}"]`);
+    const raw = el ? el.value.trim() : '';
+    if(raw === '') throw new Error('請完整填寫所有欄位後再計算。');
+    const num = parseFloat(raw);
+    if(isNaN(num)) throw new Error('請輸入有效的數字。');
+    return num;
+  }
+
+  function idxColor(i){
+    const palette = ['#3f6b4a', '#6b4a3f', '#3f5a6b', '#5a3f6b', '#6b5a3f'];
+    return palette[i % palette.length];
+  }
+
+  function fracPiece(numHtml, denHtml){
+    return `<span class="frac"><span class="num">${numHtml}</span><span class="den">${denHtml}</span></span>`;
+  }
+
+  // ---------- 判斷這個品名在目前組數下，是否完全不需要手動輸入任何欄位 ----------
+  // 只有「分析號碼數量=1」且沒有含量欄位、沒有水份欄位時，唯一一組就是最後一組，
+  // 所有欄位都是「自動」，使用者沒有東西可以填，這時候按「確定」後應該直接算出結果。
+  function needsNoInput(p, count){
+    if(count !== 1) return false;
+    const hasContent = p.hasContent !== false;
+    const hasWater = !!p.hasWater;
+    return !hasContent && !hasWater;
+  }
+
+  // ---------- 產生輸入欄位（依 hasContent / hasWater 動態決定欄位數） ----------
+  function buildGroups(container, count, p){
+    container.innerHTML = '';
+    const hasContent = p.hasContent !== false;
+    const hasWater = !!p.hasWater;
+    const cLabel = p.contentLabel || '含量%';
+    const cols = 1 + (hasContent?1:0) + (hasWater?1:0);
+
+    function makeFields(isLast){
+      const arr = [{placeholder: isLast, cls:'usage-input', label:'使用量'}];
+      if(hasContent) arr.push({cls:'content-input', label:cLabel, inputPh:p.contentPlaceholder || ''});
+      if(hasWater) arr.push({cls:'water-input', label:'水份%'});
+      return arr;
+    }
+
+    for(let i=0;i<count;i++){
+      const isLast = (i === count-1);
+      const row = document.createElement('div');
+      row.className = 'group-row' + (isLast ? ' is-last' : '');
+
+      const label = document.createElement('div');
+      label.className = 'g-label';
+      label.textContent = isLast ? `第 ${i+1} 組（最後一組，使用量自動回推）` : `第 ${i+1} 組`;
+      row.appendChild(label);
+
+      const grid = document.createElement('div');
+      grid.className = `g-grid cols-${cols}`;
+
+      makeFields(isLast).forEach(f => {
+        const cell = document.createElement('div');
+        cell.className = 'g-cell' + (f.placeholder ? ' placeholder' : '');
+        if(f.placeholder){
+          cell.innerHTML = `<div class="ph-box">自動</div>`;
+        } else {
+          const phAttr = f.inputPh ? ` placeholder="${f.inputPh}"` : '';
+          cell.innerHTML = `<label>${f.label}</label><input type="number" step="any" class="${f.cls}" data-i="${i}"${phAttr}>`;
+        }
+        grid.appendChild(cell);
+      });
+
+      row.appendChild(grid);
+      container.appendChild(row);
+    }
+  }
+
+  // ---------- 一般型公式計算（涵蓋 hasContent / hasWater 任意組合，含只有 1 組的情況） ----------
+  function calcStandardProduct(p, groupsEl){
+    const Y = p._Y;
+    if(!Y || Y < 1) throw new Error('請先產生輸入欄位。');
+    const hasContent = p.hasContent !== false;
+    const hasWater = !!p.hasWater;
+
+    const rows = [];
+    for(let i=0;i<Y;i++) rows.push({usage:0, content:null, water:null, std:0});
+
+    for(let i=0;i<Y-1;i++){
+      rows[i].usage = getVal(groupsEl,'usage-input', i);
+      if(hasContent) rows[i].content = getVal(groupsEl,'content-input', i);
+      if(hasWater) rows[i].water = getVal(groupsEl,'water-input', i);
+    }
+    const last = Y-1;
+    if(hasContent) rows[last].content = getVal(groupsEl,'content-input', last);
+    if(hasWater) rows[last].water = getVal(groupsEl,'water-input', last);
+
+    let sum = 0;
+    for(let i=0;i<Y-1;i++){
+      let v = rows[i].usage;
+      v *= hasWater ? (100 - rows[i].water)/100 : 1;
+      v *= hasContent ? (rows[i].content/p.ratio) : (1/p.ratio);
+      rows[i].std = v;
+      sum += v;
+    }
+    rows[last].std = p.standardTotal - sum;
+    let u = rows[last].std;
+    u *= hasContent ? (p.ratio/rows[last].content) : p.ratio;
+    u *= hasWater ? (100/(100-rows[last].water)) : 1;
+    rows[last].usage = u;
+
+    return rows;
+  }
+
+  // ---------- 補差型計算：先算出「動態標準總量」，再走一般型的加總/回推邏輯 ----------
+  function calcComplementProduct(p, groupsEl){
+    const ref = products.find(x => x.name === p.referTo);
+    if(!ref) throw new Error(`找不到對應品名：${p.referTo}`);
+    const refData = resultsState[ref.key];
+    if(!refData || !refData.length) throw new Error(`請先計算「${p.referTo}」，才能計算「${p.name}」。`);
+
+    const refTotalUsage = refData.reduce((s, row) => s + row.usage, 0);
+
+    let deduction;
+    if(p.complementMode === 'increase'){
+      // 增加量模式：只扣「換算後總使用量」超出「標準值」的那一段差額
+      // （原料因為含量/水份的關係，實際用量通常會比標準值多，多出來的部分才要扣）
+      if(ref.standardTotal == null){
+        throw new Error(`請先計算「${p.referTo}」（需先有標準值），才能計算「${p.name}」。`);
+      }
+      deduction = refTotalUsage - ref.standardTotal;
+    } else {
+      // 原本的模式：直接扣「換算後總使用量」
+      deduction = refTotalUsage;
+    }
+
+    const dynamicTotal = p.complementTotal - deduction;
+
+    // 動態標準總量算出來後，其餘（前面組別加總、最後一組回推）
+    // 跟一般型公式完全一樣，直接借用 calcStandardProduct。
+    const pseudoP = Object.assign({}, p, { standardTotal: dynamicTotal });
+    return calcStandardProduct(pseudoP, groupsEl);
+  }
+
+  // =========================================================
+  // 推導過程說明（僅供顯示用，不影響計算結果本身）：
+  // 把 calcStandardProduct / calcComplementProduct 已經算出來的數字，
+  // 用文字＋公式的方式，一步一步說明是怎麼算出來的。
+  // 目前由 showDerivation:true 的項目使用（例如 HEPARIN SODIUM OINTMENT）。
+  // =========================================================
+
+  // 一般計算出來的數字（使用量、含量%、水份%、標準值...）：
+  // 整數就不顯示小數點；有小數就四捨五入到小數第 2 位。
+  function fmtStepNum(n){
+    if(n === null || n === undefined || isNaN(n)) return '—';
+    const num = Number(n);
+    const rounded2 = Math.round(num * 100) / 100;
+    if(Math.abs(rounded2 - Math.round(rounded2)) < 1e-9) return String(Math.round(rounded2));
+    return rounded2.toFixed(2);
+  }
+
+  // 配方裡的比例係數（例如 0.001、100、4.19）：保留原本的精確度，
+  // 只是把浮點數運算可能產生的多餘小數位去掉（例如 0.0010 → 0.001），
+  // 不會被四捨五入到小數第 2 位，避免像 0.001 這種小係數被誤算成 0.00。
+  function fmtRatioNum(n){
+    if(n === null || n === undefined || isNaN(n)) return '—';
+    const rounded = Math.round(Number(n) * 1e6) / 1e6;
+    return String(rounded);
+  }
+
+  // 說明「一般型」公式從第 1 組到最後一組的完整分步驟計算過程。
+  // totalLabel/totalValue/totalUnit：這個品名實際拿來回推的標準總量
+  // （一般型就是 p.standardTotal；補差型則是先算出的「動態標準總量」）。
+  function explainStandardSteps(p, rows, totalLabel, totalValue, totalUnit){
+    const hasContent = p.hasContent !== false;
+    const hasWater = !!p.hasWater;
+    const cLabel = p.contentLabel || '含量%';
+    const Y = rows.length;
+    let html = '';
+
+    html += `<div class="deriv-line deriv-intro">「${totalLabel}」是這個品名全部分析號碼「換算成標準值後」加總應該要等於的目標總量（本例為 ${fmtStepNum(totalValue)}${totalUnit||''}）；最後一組就是用這個目標總量，扣掉前面已知組別換算後的標準值，回推出來的。</div>`;
+
+    for(let i=0;i<Y-1;i++){
+      const r = rows[i];
+      html += `<div class="deriv-group"><div class="deriv-group-title">第 ${i+1} 組</div>`;
+      let known = `使用量 ${fmtStepNum(r.usage)}`;
+      if(hasContent) known += `　${cLabel} ${fmtStepNum(r.content)}%`;
+      if(hasWater) known += `　水份% ${fmtStepNum(r.water)}%`;
+      html += `<div class="deriv-line">${known}</div>`;
+
+      let calcLine = `標準值 = ${fmtStepNum(r.usage)}`;
+      if(hasWater) calcLine += ` × (100−${fmtStepNum(r.water)})/100`;
+      calcLine += hasContent ? ` × (${fmtStepNum(r.content)}/${fmtRatioNum(p.ratio)})` : ` × (1/${fmtRatioNum(p.ratio)})`;
+      calcLine += ` = ${fmtStepNum(r.std)}`;
+      html += `<div class="deriv-formula">${calcLine}</div></div>`;
+    }
+
+    const knownCount = Y - 1;
+    let sumBefore = 0;
+    let sumRefText;
+    if(knownCount === 1){
+      // 只有一組已知資料時，直接引用「第1組標準值」，不用「合計」這種
+      // 聽起來像多筆加總的說法，避免使用者看不懂只有一個數字為什麼要「合計」。
+      sumBefore = rows[0].std;
+      sumRefText = `第1組標準值(${fmtStepNum(sumBefore)})`;
+    } else if(knownCount >= 2){
+      sumBefore = rows.slice(0, knownCount).reduce((s,r) => s + r.std, 0);
+      const terms = rows.slice(0, knownCount).map(r => fmtStepNum(r.std)).join(' + ');
+      html += `<div class="deriv-formula deriv-sum">前面 ${knownCount} 組標準值加總 = ${terms} = ${fmtStepNum(sumBefore)}</div>`;
+      sumRefText = `前面組別標準值加總(${fmtStepNum(sumBefore)})`;
+    } else {
+      sumRefText = '0';
+    }
+
+    const last = rows[Y-1];
+    html += `<div class="deriv-group"><div class="deriv-group-title">第 ${Y} 組（最後一組・自動回推）</div>`;
+    html += `<div class="deriv-formula">標準值 = ${totalLabel}(${fmtStepNum(totalValue)}) − ${sumRefText} = ${fmtStepNum(last.std)}</div>`;
+
+    let usageLine = `使用量 = ${fmtStepNum(last.std)}`;
+    usageLine += hasContent ? ` × (${fmtRatioNum(p.ratio)}/${fmtStepNum(last.content)})` : ` × ${fmtRatioNum(p.ratio)}`;
+    if(hasWater) usageLine += ` × 100/(100−${fmtStepNum(last.water)})`;
+    usageLine += ` = ${fmtStepNum(last.usage)}`;
+    html += `<div class="deriv-formula">${usageLine}</div></div>`;
+
+    return html;
+  }
+
+  // 針對單一品名，組出完整推導過程（一般型／補差型都支援）
+  function buildDerivationForProduct(p){
+    const rows = resultsState[p.key];
+    if(!rows || !rows.length){
+      return `<div class="deriv-empty">尚未計算「${p.name}」，請先按「計算」才能顯示推導過程。</div>`;
+    }
+    const isComplement = (p.type === 'complement');
+
+    if(!isComplement){
+      return explainStandardSteps(p, rows, '標準值', p.standardTotal, p.standardUnit);
+    }
+
+    const ref = products.find(x => x.name === p.referTo);
+    const refRows = ref ? resultsState[ref.key] : null;
+    if(!ref || !refRows || !refRows.length){
+      return `<div class="deriv-empty">「${p.name}」需要先計算「${p.referTo}」，才能顯示推導過程。</div>`;
+    }
+    const refTotalUsage = refRows.reduce((s,r) => s + r.usage, 0);
+    const isIncrease = (p.complementMode === 'increase');
+    let deduction, deductionLabel;
+    if(isIncrease){
+      deduction = refTotalUsage - ref.standardTotal;
+      deductionLabel = `「${p.referTo}」增加量`;
+    } else {
+      deduction = refTotalUsage;
+      deductionLabel = `「${p.referTo}」總使用量`;
+    }
+    const dynamicTotal = p.complementTotal - deduction;
+
+    let html = `<div class="deriv-formula deriv-dynamic">動態標準總量 = ${fmtStepNum(p.complementTotal)}${p.complementUnit||''} − ${deductionLabel}(${fmtStepNum(deduction)}) = ${fmtStepNum(dynamicTotal)}${p.complementUnit||''}</div>`;
+    html += explainStandardSteps(p, rows, '動態標準總量', dynamicTotal, p.complementUnit);
+    return html;
+  }
+
+  // 組出目前項目底下所有品名的推導過程，並依「品名1／品名2」或單一「品名」標示
+  function renderDerivationPanel(){
+    let html = '';
+    products.forEach((p, idx) => {
+      const label = products.length > 1 ? `品名${idx+1}：${p.name}` : `品名：${p.name}`;
+      html += `<div class="deriv-product"><div class="deriv-product-title">${label}</div>${buildDerivationForProduct(p)}</div>`;
+    });
+    derivationPanel.innerHTML = html;
+  }
+
+  function renderResults(){
+    let rows = '';
+    products.forEach((p, idx) => {
+      const data = resultsState[p.key];
+      if(!data) return;
+      const nameLabel = products.length > 1 ? `品名${idx+1}` : '品名';
+      data.forEach((row, i) => {
+        const isLast = (i === data.length-1);
+        rows += `
+          <tr class="${isLast ? 'last-row' : ''}">
+            <td class="product-name">${i===0 ? nameLabel : ''}</td>
+            <td>${i+1}</td>
+            <td>${isLast ? `<span class="usage-last">${row.usage.toFixed(3)}</span>` : row.usage.toFixed(3)}</td>
+            ${p._anyContent ? `<td>${row.content===null ? '—' : row.content.toFixed(2)}</td>` : ''}
+            ${p._anyWater ? `<td>${row.water===null ? '—' : row.water.toFixed(2)}</td>` : ''}
+            <td>${row.std===null ? '—' : row.std.toFixed(2)}</td>
+          </tr>
+        `;
+      });
+    });
+    resultBody.innerHTML = rows;
+    const anyResult = products.some(p => resultsState[p.key]);
+    resultCard.classList.toggle('hidden', !anyResult);
+
+    // 若「推導過程」面板目前是打開的，計算結果一有變動就順便重畫，
+    // 避免使用者看到跟目前結果不一致的舊推導內容。
+    if(derivationPanel && !derivationPanel.classList.contains('hidden')){
+      renderDerivationPanel();
+    }
+  }
+
+  // =========================================================
+  // renderApp：切換下拉選單時，整頁品名卡片重新產生
+  // =========================================================
+  function renderApp(project){
+    products = project.products.map((p, idx) => {
+      const merged = Object.assign({key: 'p'+idx, _Y: 0}, p);
+      if(merged.ratioNum != null && merged.ratioDen != null){
+        merged.ratio = merged.ratioNum / merged.ratioDen;
+      }
+      return merged;
+    });
+    resultsState = {};
+
+    const anyWater = products.some(p => p.hasWater);
+    const anyContent = products.some(p => p.hasContent !== false);
+    products.forEach(p => { p._anyWater = anyWater; p._anyContent = anyContent; });
+
+    // 品名清單
+    productsSub.innerHTML = products
+      .map((p,i) => `<span>品名${products.length>1 ? (i+1) : ''}：${p.name}</span>`)
+      .join('');
+
+    // 結果卡片內、表格上方的品名對照（只有多品名的項目才需要標示英文名稱；
+    // 只有一個品名時，表格欄位直接顯示「品名」即可，不需要額外對照）
+    nameLegend.innerHTML = products.length > 1
+      ? products.map((p,i) => `<span>品名${i+1}：<b>${p.name}</b></span>`).join('')
+      : '';
+
+    // 「推導過程」鍵：只有在項目設定裡標記 showDerivation:true 才會顯示
+    // （目前只有 HEPARIN SODIUM OINTMENT 這個項目用到，之後如需為其他
+    // 項目開啟，只要在該項目設定加上 showDerivation:true 即可）
+    derivationBtn.classList.toggle('hidden', !project.showDerivation);
+    derivationBtn.textContent = '推導過程';
+    derivationPanel.classList.add('hidden');
+    derivationPanel.innerHTML = '';
+
+    // 結果表表頭（含量欄位若整個項目都沒用到，整欄不顯示；水份欄位同理）
+    const contentLabels = [...new Set(
+      products.filter(p => p.type !== 'complement' && p.hasContent !== false)
+              .map(p => (p.contentLabel || '含量%').replace('%',''))
+    )];
+    const contentHeader = contentLabels.length ? contentLabels.join('／') : '含量';
+    resultHeadRow.innerHTML = `
+      <th>品名</th><th>分析號碼</th><th>使用量</th>
+      ${anyContent ? `<th>${contentHeader}</th>` : ''}
+      ${anyWater ? '<th>水份</th>' : ''}<th>標準值</th>
+    `;
+
+    // 品名卡片
+    let html = '';
+    products.forEach((p, i) => {
+      const isComplement = (p.type === 'complement');
+      const isEditableTotal = !!p.editableStandardTotal;
+      const isEditableRatio = !isComplement && !!p.editableRatio;
+      const stdUnit = p.standardUnit || p.complementUnit || '';
+      const ratioLabel = p.ratioLabel || '係數';
+
+      let formulaHtml;
+      let formulaNote = '';
+      if(isComplement){
+        const totalTextC = isEditableTotal
+          ? ('標準值' + (stdUnit ? `(${stdUnit})` : ''))
+          : (fmtNum(p.complementTotal) + (p.complementUnit || ''));
+        if(p.complementMode === 'increase'){
+          formulaHtml = `<span>使用量總和 = ${totalTextC} − (${p.referTo} 總使用量 − ${p.referTo} 標準值)</span>`;
+          formulaNote = `<div class="note">「${p.referTo}」換算後的增加量 ＝「${p.referTo}」總使用量 − 「${p.referTo}」標準值；若「${p.name}」的分析號碼數量 &gt; 1：「${p.name}」前面組別請填「使用量」，「${p.name}」最後一組會自動用「${totalTextC} − 「${p.referTo}」增加量 − 「${p.name}」前面組別使用量加總」回推。</div>`;
+        } else {
+          formulaHtml = `<span>使用量總和 = ${totalTextC} − ${p.referTo} 總使用量</span>`;
+          formulaNote = `<div class="note">若「${p.name}」的分析號碼數量 &gt; 1：「${p.name}」前面組別請填「使用量」，「${p.name}」最後一組會自動用「${totalTextC} − 「${p.referTo}」總使用量 − 「${p.name}」前面組別使用量加總」回推。</div>`;
+        }
+      } else {
+        const totalText = isEditableTotal
+          ? ('標準值' + (stdUnit ? `(${stdUnit})` : ''))
+          : (fmtNum(p.standardTotal) + (p.standardUnit || ''));
+        const hasContent = p.hasContent !== false;
+        const contentFormulaLabel = p.contentFormulaLabel || '含量(%)';
+
+        const pieces = [];
+        if(hasContent){
+          pieces.push(fracPiece(isEditableRatio ? ratioLabel : fmtNum(p.ratio), contentFormulaLabel));
+        } else if(p.ratioNum != null && p.ratioDen != null){
+          pieces.push(fracPiece(fmtNum(p.ratioNum), fmtNum(p.ratioDen)));
+        } else if(p.ratio !== 1){
+          pieces.push(`<span>${fmtNum(p.ratio)}</span>`);
+        }
+        if(p.hasWater){
+          pieces.push(fracPiece('100', '100 − 水份(%)'));
+        }
+
+        const allPieces = [`<span>使用量 = ${totalText}</span>`, ...pieces];
+        formulaHtml = allPieces.map((h,idx2) => idx2===0 ? h : `<span>×</span>${h}`).join('');
+      }
+
+      // 補充說明文字（若有）放在公式框「同一個框內、公式之前」，換行顯示，
+      // 文字顏色跟公式本身一致（不用另外的淡色 note 樣式）。
+      const noteLineHtml = p.note ? `<div class="formula-note-line">${p.note}</div>` : '';
+
+      const yLabelText = '分析號碼數量';
+      const stdPlaceholder = p.standardPlaceholder != null ? p.standardPlaceholder : 450;
+      const stdFieldHtml = isEditableTotal ? `
+        <div>
+          <label for="std-${p.key}">標準值${stdUnit ? `(${stdUnit})` : ''}</label>
+          <input type="number" step="any" id="std-${p.key}" placeholder="例:${stdPlaceholder}">
+        </div>
+      ` : '';
+
+      const ratioPlaceholder = p.ratioPlaceholder != null ? p.ratioPlaceholder : 1;
+      const ratioFieldHtml = isEditableRatio ? `
+        <div>
+          <label for="ratio-${p.key}">${ratioLabel}</label>
+          <input type="number" step="any" id="ratio-${p.key}" placeholder="例:${ratioPlaceholder}">
+        </div>
+      ` : '';
+
+      // 標準值／係數這類欄位放在「確定」按鈕之後、第一組組別欄位之前，
+      // 而且永遠可以編輯（不會因為按過確定就鎖住）：這樣需要臨時修改
+      // 某個數字再重算時，只要改完直接按「計算」就好，不用整個清除重填。
+      //
+      // 補充欄位（標準值／係數）跟「計算」鍵，在使用者按過「確定」之前先隱藏起來，
+      // 避免第一次使用的人一次看到太多按鍵、欄位而不知所措。
+      const extraFieldsRowHtml = (isEditableTotal || isEditableRatio) ? `
+        <div class="extra-fields-row hidden" id="extra-${p.key}">
+          ${stdFieldHtml}
+          ${ratioFieldHtml}
+        </div>
+      ` : '';
+
+      const stepAndGroupsHtml = `
+        <div class="step">
+          <div>
+            <label for="y-${p.key}">${yLabelText}</label>
+            <input type="number" id="y-${p.key}" min="1" max="7" step="1" placeholder="例:2">
+          </div>
+          <button class="btn-primary" id="confirm-${p.key}" style="background:${idxColor(i)};color:#fff;">確定</button>
+          <button class="btn-clear-small" id="clear-${p.key}">清除</button>
+        </div>
+        ${extraFieldsRowHtml}
+        <div class="groups" id="groups-${p.key}"></div>
+      `;
+
+      html += `
+        <section class="product-card" id="card-${p.key}">
+          <h2>${products.length>1 ? '品名：' : ''}${p.name}</h2>
+          <div class="formula">
+            ${noteLineHtml}
+            <div class="formula-row">${formulaHtml}</div>
+          </div>
+          ${formulaNote}
+          ${stepAndGroupsHtml}
+          <div class="action-row hidden" id="action-${p.key}">
+            <button class="btn-calc-small" id="calc-${p.key}">計算</button>
+          </div>
+          <div class="error" id="err-${p.key}"></div>
+        </section>
+      `;
+    });
+    productsContainer.innerHTML = html;
+
+    resultBody.innerHTML = '';
+    resultCard.classList.add('hidden');
+
+    // 綁定事件
+    products.forEach(p => {
+      const isComplement = (p.type === 'complement');
+      const errEl = document.getElementById(`err-${p.key}`);
+      const calcBtn = document.getElementById(`calc-${p.key}`);
+      const clearBtn = document.getElementById(`clear-${p.key}`);
+      const yInput = document.getElementById(`y-${p.key}`);
+      const confirmBtn = document.getElementById(`confirm-${p.key}`);
+      const groupsEl = document.getElementById(`groups-${p.key}`);
+      const stdInputEl = document.getElementById(`std-${p.key}`);
+      const ratioInputEl = document.getElementById(`ratio-${p.key}`);
+      const extraRowEl = document.getElementById(`extra-${p.key}`);
+      const actionRowEl = document.getElementById(`action-${p.key}`);
+
+      // 任何欄位輸入時都即時儲存目前狀態，避免手機/電腦版切換時資料消失
+      groupsEl.addEventListener('input', persistState);
+      if(stdInputEl) stdInputEl.addEventListener('input', persistState);
+      if(ratioInputEl) ratioInputEl.addEventListener('input', persistState);
+
+      confirmBtn.addEventListener('click', function(){
+        errEl.textContent = '';
+
+        const val = parseInt(yInput.value, 10);
+        if(!val || val < 1){
+          errEl.textContent = '請輸入大於等於 1 的整數。';
+          return;
+        }
+        if(val > 7){
+          errEl.textContent = '分析號碼數量不可超過 7 組。';
+          return;
+        }
+        p._Y = val;
+        buildGroups(groupsEl, val, p);
+        yInput.disabled = true;
+        confirmBtn.disabled = true;
+
+        // 確定後才顯示這個品名的其他輸入欄位（標準值／係數）與「計算」鍵，
+        // 避免第一次使用的人一次看到太多按鍵、欄位而不知所措。
+        if(extraRowEl) extraRowEl.classList.remove('hidden');
+        if(actionRowEl) actionRowEl.classList.remove('hidden');
+
+        // 若這個品名在此組數下完全沒有欄位需要手動輸入（例如分析號碼數量=1，
+        // 又沒有含量%、沒有水份%），就不需要使用者再按一次「計算」，直接算出結果。
+        if(needsNoInput(p, val)){
+          calcBtn.click();
+        }
+        persistState();
+      });
+
+      calcBtn.addEventListener('click', function(){
+        errEl.textContent = '';
+        try{
+          // 標準值／係數這類欄位永遠可以編輯，每次按「計算」都重新讀取目前
+          // 畫面上的數字，這樣臨時要改某個數值再重算，不用清除重填。
+          if(p.editableStandardTotal){
+            const stdRaw = stdInputEl ? stdInputEl.value.trim() : '';
+            const stdVal = parseFloat(stdRaw);
+            if(stdRaw === '' || isNaN(stdVal)){
+              throw new Error('請輸入有效的標準值。');
+            }
+            if(isComplement){
+              p.complementTotal = stdVal;
+            } else {
+              p.standardTotal = stdVal;
+            }
+          }
+          if(p.editableRatio){
+            const ratioRaw = ratioInputEl ? ratioInputEl.value.trim() : '';
+            const ratioVal = parseFloat(ratioRaw);
+            if(ratioRaw === '' || isNaN(ratioVal)){
+              throw new Error(`請輸入有效的${p.ratioLabel || '係數'}。`);
+            }
+            p.ratio = ratioVal;
+          }
+
+          resultsState[p.key] = isComplement
+            ? calcComplementProduct(p, groupsEl)
+            : calcStandardProduct(p, groupsEl);
+          renderResults();
+          resultCard.scrollIntoView({behavior:'smooth', block:'start'});
+          persistState();
+        } catch(err){
+          errEl.textContent = err.message || '輸入有誤，請檢查所有欄位是否已填寫且為有效數字。';
+        }
+      });
+
+      clearBtn.addEventListener('click', function(){
+        p._Y = 0;
+        yInput.value = '';
+        yInput.disabled = false;
+        confirmBtn.disabled = false;
+        if(stdInputEl){ stdInputEl.value = ''; stdInputEl.disabled = false; }
+        if(ratioInputEl){ ratioInputEl.value = ''; ratioInputEl.disabled = false; }
+        if(extraRowEl) extraRowEl.classList.add('hidden');
+        if(actionRowEl) actionRowEl.classList.add('hidden');
+        groupsEl.innerHTML = '';
+        errEl.textContent = '';
+        resultsState[p.key] = null;
+        renderResults();
+        yInput.focus();
+        persistState();
+      });
+    });
+
+    restoreState(project);
+  }
+
+  // ---------- 初始載入：優先還原上次選到的項目；沒有的話預設顯示 NAZAL SPRAY ----------
+  loadAutoClearSetting();
+  const savedAll = loadAll();
+  const DEFAULT_HOME_PROJECT_ID = 'nazal_spray_lavender';
+  const initialProject = (savedAll.lastProjectId && PROJECTS.find(p => p.id === savedAll.lastProjectId))
+    || PROJECTS.find(p => p.id === DEFAULT_HOME_PROJECT_ID)
+    || PROJECTS[0];
+  currentProjectId = initialProject.id;
+  updateTriggerDisplay(initialProject);
+  renderApp(initialProject);
+})();
+</script>
+
+</body>
+</html>
